@@ -1,19 +1,19 @@
 lio_sam:
 
   # Topics
-  pointCloudTopic: "points_raw"               # Point cloud data
-  imuTopic: "imu_raw"                         # IMU data
-  odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
+  pointCloudTopic: "airsim_node/PhysXCar/lidar/VLP16_1"               # Point cloud data
+  imuTopic: "airsim_node/PhysXCar/imu/Imu"                         # IMU data
+  odomTopic: "airsim_node/PhysXCar/odom_local_enu"                   # IMU pre-preintegration odometry, same frequency as IMU
   gpsTopic: "odometry/gpsz"                   # GPS odometry topic from navsat, see module_navsat.launch file
 
   # Frames
-  lidarFrame: "base_link"
-  baselinkFrame: "base_link"
+  lidarFrame: "VLP16_1"
+  baselinkFrame: "PhysXCar/odom_local_enu"
   odometryFrame: "odom"
   mapFrame: "map"
 
   # GPS Settings
-  useImuHeadingInitialization: true           # if using GPS data, set to "true"
+  useImuHeadingInitialization: false           # if using GPS data, set to "true"
   useGpsElevation: false                      # if GPS elevation is bad, set to "false"
   gpsCovThreshold: 2.0                        # m^2, threshold for using GPS data
   poseCovThreshold: 25.0                      # m^2, threshold for using GPS data
@@ -28,7 +28,7 @@ lio_sam:
   Horizon_SCAN: 1800                          # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048)
   downsampleRate: 1                           # default: 1. Downsample your data if too many points. i.e., 16 = 64 / 4, 16 = 16 / 1
   lidarMinRange: 1.0                          # default: 1.0, minimum lidar range to be used
-  lidarMaxRange: 1000.0                       # default: 1000.0, maximum lidar range to be used
+  lidarMaxRange: 100.0                       # default: 1000.0, maximum lidar range to be used
 
   # IMU Settings
   imuAccNoise: 3.9939570888238808e-03
@@ -69,7 +69,7 @@ lio_sam:
   rotation_tollerance: 1000                     # radians
 
   # CPU Params
-  numberOfCores: 4                              # number of cores for mapping optimization
+  numberOfCores: 8                              # number of cores for mapping optimization
   mappingProcessInterval: 0.15                  # seconds, regulate mapping frequency
 
   # Surrounding map
@@ -112,7 +112,7 @@ ekf_gps:
   publish_tf: false
   map_frame: map
   odom_frame: odom
-  base_link_frame: base_link
+  base_link_frame: PhysXCar/odom_local_enu
   world_frame: odom
 
   frequency: 50

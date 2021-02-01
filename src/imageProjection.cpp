@@ -5,13 +5,13 @@ struct VelodynePointXYZIRT
 {
     PCL_ADD_POINT4D
     PCL_ADD_INTENSITY;
-    uint16_t ring;
+
     float time;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
 POINT_CLOUD_REGISTER_POINT_STRUCT (VelodynePointXYZIRT,
     (float, x, x) (float, y, y) (float, z, z) (float, intensity, intensity)
-    (uint16_t, ring, ring) (float, time, time)
+     (float, time, time)
 )
 
 struct OusterPointXYZIRT {
@@ -32,6 +32,9 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(OusterPointXYZIRT,
 
 // Use the Velodyne point format as a common representation
 using PointXYZIRT = VelodynePointXYZIRT;
+
+// Configurating the ring channel
+bool useCloudRing = false;
 
 const int queueLength = 2000;
 
@@ -218,7 +221,7 @@ public:
                 dst.y = src.y;
                 dst.z = src.z;
                 dst.intensity = src.intensity;
-                dst.ring = src.ring;
+                //dst.ring = src.ring;
                 dst.time = src.t * 1e-9f;
             }
         }
@@ -514,6 +517,55 @@ public:
         return newPoint;
     }
 
+     void projectPointCloud(){
+        // range image projection
+        float verticalAngle, horizonAngle, range;
+        size_t rowIdn, columnIdn, index, cloudSize; 
+        PointType thisPoint;
+
+        cloudSize = laserCloudIn->points.size();
+
+        for (size_t i = 0; i < cloudSize; ++i){
+
+            thisPoint.x = laserCloudIn->points[i].x;
+            thisPoint.y = laserCloudIn->points[i].y;
+            thisPoint.z = laserCloudIn->points[i].z;
+            // find the row and column index in the iamge for this point
+            if (useCloudRing == true){
+                rowIdn = laserCloudInRing->points[i].ring;
+            }
+            else{
+                verticalAngle = atan2(thisPoint.z, sqrt(thisPoint.x * thisPoint.x + thisPoint.y * thisPoint.y)) * 180 / M_PI;
+                rowIdn = (verticalAngle + ang_bottom) / ang_res_y;
+            }
+            if (rowIdn < 0 || rowIdn >= N_SCAN)
+                continue;
+
+            horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;
+
+            columnIdn = -round((horizonAngle-90.0)/ang_res_x) + Horizon_SCAN/2;
+            if (columnIdn >= Horizon_SCAN)
+                columnIdn -= Horizon_SCAN;
+
+            if (columnIdn < 0 || columnIdn >= Horizon_SCAN)
+                continue;
+
+            range = sqrt(thisPoint.x * thisPoint.x + thisPoint.y * thisPoint.y + thisPoint.z * thisPoint.z);
+            if (range < sensorMinimumRange)
+                continue;
+            
+            rangeMat.at<float>(rowIdn, columnIdn) = range;
+
+            thisPoint.intensity = (float)rowIdn + (float)columnIdn / 10000.0;
+
+            index = columnIdn  + rowIdn * Horizon_SCAN;
+            fullCloud->points[index] = thisPoint;
+            fullInfoCloud->points[index] = thisPoint;
+            fullInfoCloud->points[index].intensity = range; // the corresponding range of a point is saved as "intensity"
+        }
+    }
+    //Subtitue this ting with the LeGO-LOAM projectPointCloud() function
+    /*
     void projectPointCloud()
     {
         int cloudSize = laserCloudIn->points.size();
@@ -529,14 +581,12 @@ public:
             float range = pointDistance(thisPoint);
             if (range < lidarMinRange || range > lidarMaxRange)
                 continue;
-
             int rowIdn = laserCloudIn->points[i].ring;
             if (rowIdn < 0 || rowIdn >= N_SCAN)
                 continue;
 
             if (rowIdn % downsampleRate != 0)
                 continue;
-
             float horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;
 
             static float ang_res_x = 360.0/float(Horizon_SCAN);
@@ -558,6 +608,7 @@ public:
             fullCloud->points[index] = thisPoint;
         }
     }
+    */
 
     void cloudExtraction()
     {

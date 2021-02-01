@@ -21,10 +21,11 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
 )
 
+find_package(GTSAM REQUIRED QUIET) #TODO: Reconfigure this thing
 find_package(OpenMP REQUIRED)
 find_package(PCL REQUIRED QUIET)
 find_package(OpenCV REQUIRED QUIET)
-find_package(GTSAM REQUIRED QUIET)
+
 
 add_message_files(
   DIRECTORY msg
@@ -43,7 +44,6 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   DEPENDS PCL GTSAM
-
   CATKIN_DEPENDS
   std_msgs
   nav_msgs
@@ -52,23 +52,25 @@ catkin_package(
   message_runtime
   message_generation
   visualization_msgs
+
 )
 
 # include directories
 include_directories(
 	include
+	${GTSAM_INCLUDE_DIR}
 	${catkin_INCLUDE_DIRS}
 	${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-	${GTSAM_INCLUDE_DIR}
 )
 
 # link directories
 link_directories(
 	include
+  ${GTSAM_LIBRARY_DIRS}
 	${PCL_LIBRARY_DIRS}
   ${OpenCV_LIBRARY_DIRS}
-  ${GTSAM_LIBRARY_DIRS}
+  
 )
 
 ###########
