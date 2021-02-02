@@ -5,15 +5,14 @@ struct VelodynePointXYZIRT
 {
     PCL_ADD_POINT4D
     PCL_ADD_INTENSITY;
-
+    uint16_t ring;
     float time;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
 POINT_CLOUD_REGISTER_POINT_STRUCT (VelodynePointXYZIRT,
     (float, x, x) (float, y, y) (float, z, z) (float, intensity, intensity)
-     (float, time, time)
+    (uint16_t, ring, ring) (float, time, time)
 )
-
 struct OusterPointXYZIRT {
     PCL_ADD_POINT4D;
     float intensity;
@@ -259,7 +258,7 @@ public:
             if (ringFlag == -1)
             {
                 ROS_ERROR("Point cloud ring channel not available, please configure your point cloud data!");
-                ros::shutdown();
+                //ros::shutdown();
             }
         }
 
@@ -532,18 +531,18 @@ public:
             thisPoint.z = laserCloudIn->points[i].z;
             // find the row and column index in the iamge for this point
             if (useCloudRing == true){
-                rowIdn = laserCloudInRing->points[i].ring;
+                rowIdn = laserCloudIn->points[i].ring;
             }
             else{
                 verticalAngle = atan2(thisPoint.z, sqrt(thisPoint.x * thisPoint.x + thisPoint.y * thisPoint.y)) * 180 / M_PI;
-                rowIdn = (verticalAngle + ang_bottom) / ang_res_y;
+                rowIdn = (verticalAngle + -15) / 15;
             }
             if (rowIdn < 0 || rowIdn >= N_SCAN)
                 continue;
 
             horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;
 
-            columnIdn = -round((horizonAngle-90.0)/ang_res_x) + Horizon_SCAN/2;
+            columnIdn = -round((horizonAngle-90.0)/0.2) + Horizon_SCAN/2;
             if (columnIdn >= Horizon_SCAN)
                 columnIdn -= Horizon_SCAN;
 
@@ -551,7 +550,7 @@ public:
                 continue;
 
             range = sqrt(thisPoint.x * thisPoint.x + thisPoint.y * thisPoint.y + thisPoint.z * thisPoint.z);
-            if (range < sensorMinimumRange)
+            if (range < 3.5) //@Hi-Peng: Hard coded, need to be change
                 continue;
             
             rangeMat.at<float>(rowIdn, columnIdn) = range;
@@ -560,11 +559,11 @@ public:
 
             index = columnIdn  + rowIdn * Horizon_SCAN;
             fullCloud->points[index] = thisPoint;
-            fullInfoCloud->points[index] = thisPoint;
-            fullInfoCloud->points[index].intensity = range; // the corresponding range of a point is saved as "intensity"
+            fullCloud->points[index] = thisPoint;
+            fullCloud->points[index].intensity = range; // the corresponding range of a point is saved as "intensity"
         }
     }
-    //Subtitue this ting with the LeGO-LOAM projectPointCloud() function
+    //@Hi-Peng: Subtitue this ting with the LeGO-LOAM projectPointCloud() function 
     /*
     void projectPointCloud()
     {
